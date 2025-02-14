@@ -1,0 +1,86 @@
+<!-- Filename: colorino-og-image.svg -->
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  width="1189"
+  height="794"
+  viewBox="0 0 1189 794"
+>
+  <!-- Define a gentle gradient background -->
+  <defs>
+    <linearGradient
+      id="bgGradient"
+      x1="0"
+      y1="0"
+      x2="1189"
+      y2="794"
+      gradientUnits="userSpaceOnUse"
+    >
+      <!-- Start with the splash background color you referenced (#eae3cd) -->
+      <stop offset="0%" stop-color="#eae3cd" />
+      <!-- Fade to a softer hue -->
+      <stop offset="100%" stop-color="#f3f3ee" />
+    </linearGradient>
+  </defs>
+
+  <!-- Full background rectangle using our gradient -->
+  <rect
+    x="0"
+    y="0"
+    width="1189"
+    height="794"
+    fill="url(#bgGradient)"
+  />
+
+  <!-- A playful wave shape near the top (in a bright color) -->
+  <path
+    d="
+      M 0,180
+      C 300,50  800,50  1189,180
+      L 1189,0
+      L 0,0
+      Z
+    "
+    fill="#ffd757"
+    opacity="0.7"
+  />
+
+  <!-- Another wave shape in a contrasting color -->
+  <path
+    d="
+      M 0,290
+      C 300,180  800,200  1189,300
+      L 1189,180
+      L 0,180
+      Z
+    "
+    fill="#ff9e57"
+    opacity="0.7"
+  />
+
+  <!-- Big bold title in the center -->
+  <text
+    x="50%"
+    y="50%"
+    text-anchor="middle"
+    dominant-baseline="middle"
+    font-family="sans-serif"
+    font-size="80"
+    font-weight="bold"
+    fill="#403c39"
+  >
+    Colorino
+  </text>
+
+  <!-- Subheading below the main title -->
+  <text
+    x="50%"
+    y="58%"
+    text-anchor="middle"
+    dominant-baseline="middle"
+    font-family="sans-serif"
+    font-size="36"
+    fill="#403c39"
+  >
+    Color your PFP!
+  </text>
+</svg>
