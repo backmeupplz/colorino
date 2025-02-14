@@ -143,6 +143,14 @@ function AppWithContext({ context }: { context?: Context.FrameContext }) {
         >
           Share the frame
         </button>
+        <button
+          className="btn"
+          onClick={() =>
+            window.open('https://github.com/backmeupplz/colorino', '_blank')
+          }
+        >
+          Submit a PR!
+        </button>
       </div>
     </div>
   )
