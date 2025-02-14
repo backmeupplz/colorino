@@ -1,0 +1,17 @@
+{
+  "accountAssociation": {
+    "header": "eyJmaWQiOjEzNTYsInR5cGUiOiJjdXN0b2R5Iiwia2V5IjoiMHgyYjA5NDUwQ0MxODAxOWQyYzUwNWJCY0VDYjI3NDg1RTA0NjlCQzJjIn0",
+    "payload": "eyJkb21haW4iOiJjb2xvcmluby5zaXRlIn0",
+    "signature": "MHgwMGZkMWY0MGU5MDJjYmMyZDg1YjgwODQxYWE5MTgyOTIzNGM0Mzc4ZTM0ODI2NWEwMTA3Mjk4ZDA2Y2RhYTAzNjZjOWY5Nzk5NjI3M2UzZTdiM2M2NzVjZWFhMWU2ZTIxZmYzOWJmNzNiMjViNTVhNmZhZmUwNzMxZmI0Mjk4ODFj"
+  },
+  "frame": {
+    "version": "1",
+    "name": "Colorino: Color my PFP!",
+    "iconUrl": "https://colorino.site/frames/logo.png",
+    "homeUrl": "https://colorino.site",
+    "imageUrl": "https://colorino.site/frames/image-url.jpg",
+    "buttonTitle": "Color my PFP!",
+    "splashImageUrl": "https://colorino.site/frames/logo.png",
+    "splashBackgroundColor": "#eae3cd"
+  }
+}
