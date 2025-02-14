@@ -1,5 +1,5 @@
-import frameSdk, { Context } from '@farcaster/frame-sdk'
 import { useEffect, useState } from 'preact/compat'
+import frameSdk, { Context } from '@farcaster/frame-sdk'
 import toast, { Toaster } from 'react-hot-toast'
 
 const colorFilters: Record<string, string> = {
@@ -9,7 +9,7 @@ const colorFilters: Record<string, string> = {
   blue: 'grayscale(1) sepia(1) saturate(5000%) hue-rotate(200deg)',
 }
 
-const castUrl = 'https://warpcast.com/warpcastadmin.eth'
+const castUrl = 'https://warpcast.com/warpcastadmin.eth/0x696df624'
 
 function AppWithContext({ context }: { context?: Context.FrameContext }) {
   const [color, setColor] = useState<string>('original')
@@ -63,14 +63,14 @@ function AppWithContext({ context }: { context?: Context.FrameContext }) {
       }
     }
     if (filterAvailable) {
-      applyFilter()
+      void applyFilter()
     }
-  }, [color, context?.user.pfpUrl])
+  }, [color, context.user.pfpUrl, filterAvailable])
 
-  const downloadFilteredImage = async () => {
+  const downloadFilteredImage = () => {
     toast.success('Opening new pfp in a new tab...')
     toast.success(`https://polite-deer-repeat.loca.lt/?data=${renderedSrc}`)
-    frameSdk.actions.openUrl(
+    return frameSdk.actions.openUrl(
       `https://polite-deer-repeat.loca.lt/?data=${renderedSrc}`
     )
   }
@@ -90,11 +90,11 @@ function AppWithContext({ context }: { context?: Context.FrameContext }) {
       <h3>Color your Farcaster PFP!</h3>
 
       {/* Color filter buttons */}
-      <div className="flex gap-2 flex-wrap">
+      <div className="flex flex-wrap gap-2">
         {Object.keys(colorFilters).map((colorOption) => (
           <button
             key={colorOption}
-            className={`btn-sm btn capitalize ${color === colorOption ? 'btn-primary' : ''}`}
+            className={`btn btn-sm capitalize ${color === colorOption ? 'btn-primary' : ''}`}
             onClick={() => setColor(colorOption)}
           >
             {colorOption}
@@ -105,13 +105,13 @@ function AppWithContext({ context }: { context?: Context.FrameContext }) {
       {/* Render the tinted image (now baked in, so "Save As" will save the filter) */}
       {filterAvailable ? (
         <img
-          className="w-full aspect-square object-cover"
+          className="aspect-square w-full object-cover"
           src={renderedSrc}
           alt="Filtered PFP"
         />
       ) : (
         <img
-          className="w-full aspect-square object-cover"
+          className="aspect-square w-full object-cover"
           src={context.user.pfpUrl}
           style={{ filter: colorFilters[color] }}
         />
@@ -186,10 +186,10 @@ export default function App() {
       } catch (error) {
         setError(error instanceof Error ? error.message : `${error}`)
       } finally {
-        frameSdk.actions.ready({})
+        return frameSdk.actions.ready({})
       }
     }
-    getContext()
+    void getContext()
   }, [])
 
   return (
