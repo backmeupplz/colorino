@@ -154,7 +154,7 @@ function AppWithContext({ context }: { context?: Context.FrameContext }) {
             const encodedText = encodeURIComponent(
               'I am colored now, wanna get colored too?'
             )
-            const encodedUrl = encodeURIComponent(castUrl)
+            const encodedUrl = encodeURIComponent('https://colorino.site')
             const warpcastUrl = `https://warpcast.com/~/compose?text=${encodedText}&embeds[]=${encodedUrl}`
             return frameSdk.actions.openUrl(warpcastUrl)
           }}
