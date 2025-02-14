@@ -67,6 +67,14 @@ function AppWithContext({ context }: { context?: Context.FrameContext }) {
     }
   }, [color, context?.user.pfpUrl])
 
+  const downloadFilteredImage = async () => {
+    toast.success('Opening new pfp in a new tab...')
+    toast.success(`https://polite-deer-repeat.loca.lt/?data=${renderedSrc}`)
+    frameSdk.actions.openUrl(
+      `https://polite-deer-repeat.loca.lt/?data=${renderedSrc}`
+    )
+  }
+
   if (!context.user.pfpUrl) {
     return (
       <div>
@@ -108,15 +116,25 @@ function AppWithContext({ context }: { context?: Context.FrameContext }) {
           style={{ filter: colorFilters[color] }}
         />
       )}
-      {filterAvailable ? (
-        <p>Now long tap or right click and save the image!</p>
+      {/* {filterAvailable ? (
+        <></>
       ) : (
         <p>
           Your browser doesn't support real image filters, so the best you can
           do is to screenshot and crop, good luck!
         </p>
-      )}
+      )} */}
+      <p>
+        For now, there's no way to download an image from a frame, and I
+        couldn't find a way to update PFP automatically, so you have to
+        screenshot, crop and set this as your new PFP. Cheers!
+      </p>
       <div className="flex flex-col gap-2">
+        {/* {filterAvailable && (
+          <button className="btn" onClick={downloadFilteredImage}>
+            Download Tinted Image
+          </button>
+        )} */}
         <button className="btn" onClick={() => frameSdk.actions.close()}>
           Close Frame
         </button>
