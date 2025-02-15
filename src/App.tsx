@@ -149,6 +149,7 @@ function AppWithContext({ context }: { context?: Context.FrameContext }) {
         console.log('deeplinkUrl:', deeplinkUrl)
         // Step 4: Display the deeplink URL as a QR code.
         // (Assumes you have a state setter, e.g., setDeepLinkUrl, and a QR component.)
+        setSignerAtomValue(privateKeyString)
         setDeepLinkUrl(deeplinkUrl)
         toast.dismiss(toastId)
         toastId = toast.loading('Scan the QR code below')
