@@ -12,9 +12,13 @@
   },
   "dependencies": {
     "@farcaster/frame-sdk": "^0.0.27",
+    "@noble/ed25519": "^2.2.3",
     "jotai": "^2.12.0",
     "preact": "^10.24.3",
-    "react-hot-toast": "^2.5.1"
+    "react-hot-toast": "^2.5.1",
+    "react-qr-code": "^2.0.15",
+    "viem": "^2.23.2",
+    "vite-plugin-node-polyfills": "^0.23.0"
   },
   "devDependencies": {
     "@preact/preset-vite": "^2.9.1",

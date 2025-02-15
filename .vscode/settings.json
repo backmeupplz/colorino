@@ -16,5 +16,6 @@
   },
   "editor.quickSuggestions": {
     "strings": true
-  }
+  },
+  "cSpell.words": ["deeplink", "viem"]
 }

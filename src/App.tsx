@@ -1,5 +1,10 @@
-import { useEffect, useState } from 'preact/compat'
+import { ByteArray, toBytes, toHex } from 'viem'
+import { ed25519 } from '@noble/curves/ed25519'
+import { useAtom } from 'jotai'
+import { useCallback, useEffect, useState } from 'preact/compat'
+import QRCode from 'react-qr-code'
 import frameSdk, { Context } from '@farcaster/frame-sdk'
+import signerAtom from 'signerAtom'
 import toast, { Toaster } from 'react-hot-toast'
 
 const colorFilters: Record<string, string> = {
@@ -87,6 +92,143 @@ function AppWithContext({ context }: { context?: Context.FrameContext }) {
     }
   }
 
+  const [deepLinkUrl, setDeepLinkUrl] = useState<string | null>(null)
+  const [loadingSigner, setLoadingSigner] = useState<boolean>(false)
+  const [signerAtomValue, setSignerAtomValue] = useAtom(signerAtom)
+
+  const setPfp = useCallback(async () => {
+    let toastId = toast.loading('Setting new profile picture...')
+    setLoadingSigner(true)
+    let signerPrivateKey: ByteArray | null = null
+    try {
+      if (!signerAtomValue) {
+        // Step 1: Generate a new keypair.
+        const privateKey = ed25519.utils.randomPrivateKey()
+        const publicKeyBytes = ed25519.getPublicKey(privateKey)
+        // Convert publicKeyBytes (Uint8Array) to a hex string without Buffer.
+        const key = toHex(publicKeyBytes)
+        const privateKeyString = toHex(privateKey)
+
+        // Step 2: Obtain the signature from the signer server.
+        const deadline = Math.floor(Date.now() / 1000) + 60 * 60
+        toast.dismiss(toastId)
+        toastId = toast.loading('Obtaining signature from signer server...')
+        const sigRes = await fetch(
+          `https://signer.colorino.site/signature?key=${key}&deadline=${deadline}`
+        )
+        if (!sigRes.ok) {
+          throw new Error('Failed to obtain signature from signer server')
+        }
+        const { signature } = await sigRes.json()
+
+        // Step 3: Create a signed key request via the Warpcast API.
+        const warpcastApi = 'https://api.warpcast.com'
+        // Use the fid from context.
+        const fid = 990688
+        toast.dismiss(toastId)
+        toastId = toast.loading('Creating signed key request via Warpcast...')
+        console.log(key, fid, signature, deadline)
+        const warpcastRes = await fetch(
+          `${warpcastApi}/v2/signed-key-requests`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              key,
+              requestFid: fid,
+              signature,
+              deadline,
+            }),
+          }
+        )
+        if (!warpcastRes.ok) {
+          throw new Error(`Warpcast API error: ${warpcastRes.statusText}`)
+        }
+        const warpcastJson = await warpcastRes.json()
+        const { token, deeplinkUrl } = warpcastJson.result.signedKeyRequest
+        console.log('deeplinkUrl:', deeplinkUrl)
+        // Step 4: Display the deeplink URL as a QR code.
+        // (Assumes you have a state setter, e.g., setDeepLinkUrl, and a QR component.)
+        setDeepLinkUrl(deeplinkUrl)
+        toast.dismiss(toastId)
+        toastId = toast.loading('Scan the QR code below')
+        // Step 5: Poll for the signed key request status until it is completed.
+        const poll = async (token: string) => {
+          while (true) {
+            await new Promise((resolve) => setTimeout(resolve, 2000))
+            console.log('Polling signed key request...')
+            const pollRes = await fetch(
+              `${warpcastApi}/v2/signed-key-request?token=${encodeURIComponent(
+                token
+              )}`
+            )
+            if (!pollRes.ok) {
+              throw new Error(`Polling error: ${pollRes.statusText}`)
+            }
+            const pollJson = await pollRes.json()
+            const signedKeyRequest = pollJson.result.signedKeyRequest
+            if (signedKeyRequest.state === 'completed') {
+              return signedKeyRequest
+            }
+          }
+        }
+        await poll(token)
+        setSignerAtomValue(privateKeyString)
+        signerPrivateKey = privateKey
+        setDeepLinkUrl(null)
+      } else {
+        signerPrivateKey = toBytes(signerAtomValue)
+      }
+      // Step 6: upload the pfp to the server
+      toast.dismiss(toastId)
+      toastId = toast.loading('Uploading new pfp...')
+      const response = await fetch('https://images.colorino.site/upload', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ data: renderedSrc }),
+      })
+      if (!response.ok) {
+        throw new Error(`Upload failed: ${response.statusText}`)
+      }
+      const json = await response.json()
+      const imageUrl = `https://images.colorino.site/${json.hash}.avif`
+      // Step 7: set the pfp
+      toast.dismiss(toastId)
+      toastId = toast.loading('Setting the new pfp...')
+      if (!signerPrivateKey) {
+        throw new Error('No signer key found')
+      }
+      const changePfpResponse = await fetch(
+        'https://signer.colorino.site/change-pfp',
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            privateKey: toHex(signerPrivateKey),
+            pfp: imageUrl,
+            fid: context.user.fid,
+          }),
+        }
+      )
+      if (!changePfpResponse.ok) {
+        throw new Error(`Changing pfp failed: ${changePfpResponse.statusText}`)
+      }
+      // Step 8: done
+      toast.dismiss(toastId)
+      toast.success('Profile picture set successfully!')
+    } catch (error) {
+      console.error('Error setting profile picture:', error)
+      toast.error(
+        `Error setting profile picture: ${
+          error instanceof Error ? error.message : error
+        }`
+      )
+    } finally {
+      toast.dismiss(toastId)
+      setLoadingSigner(false)
+    }
+  }, [context.user.fid, renderedSrc, setSignerAtomValue, signerAtomValue])
+
   if (!context.user.pfpUrl) {
     return (
       <div>
@@ -120,6 +262,33 @@ function AppWithContext({ context }: { context?: Context.FrameContext }) {
       />
 
       <div className="flex flex-col gap-2">
+        <button
+          className="btn btn-primary"
+          onClick={setPfp}
+          disabled={loadingSigner}
+        >
+          Set as my PFP automatically
+        </button>
+        {deepLinkUrl && loadingSigner && (
+          <div className="flex w-full flex-col items-center justify-center">
+            <p>
+              Please, scan this QR code with a mobile device with Warpcast
+              installed:
+            </p>
+            <QRCode value={deepLinkUrl} />
+            <p>
+              Or{' '}
+              <a
+                onClick={() => frameSdk.actions.openUrl(deepLinkUrl)}
+                className="cursor-pointer"
+              >
+                open this URL
+              </a>{' '}
+              if you're on mobile.
+            </p>
+          </div>
+        )}
+
         <button
           className="btn"
           onClick={downloadFilteredImage}
