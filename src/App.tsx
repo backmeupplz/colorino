@@ -138,6 +138,8 @@ function AppWithContext({ context }: { context?: Context.FrameContext }) {
               requestFid: fid,
               signature,
               deadline,
+              redirectUrl:
+                'https://warpcast.com/?launchFrameDomain=colorino.site',
             }),
           }
         )
