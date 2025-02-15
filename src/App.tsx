@@ -79,7 +79,7 @@ function AppWithContext({ context }: { context?: Context.FrameContext }) {
         throw new Error(`Upload failed: ${response.statusText}`)
       }
       const json = await response.json()
-      const imageUrl = `https://images.colorino.site/${json.hash}.avif`
+      const imageUrl = `https://images.colorino.site/${json.hash}.png`
       return frameSdk.actions.openUrl(imageUrl)
     } catch (error) {
       console.error('Error uploading image:', error)
@@ -191,7 +191,7 @@ function AppWithContext({ context }: { context?: Context.FrameContext }) {
         throw new Error(`Upload failed: ${response.statusText}`)
       }
       const json = await response.json()
-      const imageUrl = `https://images.colorino.site/${json.hash}.avif`
+      const imageUrl = `https://images.colorino.site/${json.hash}.png`
       // Step 7: set the pfp
       toast.dismiss(toastId)
       toastId = toast.loading('Setting the new pfp...')
