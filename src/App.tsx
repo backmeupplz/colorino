@@ -288,7 +288,8 @@ function AppWithContext({ context }: { context?: Context.FrameContext }) {
               >
                 open this URL
               </a>{' '}
-              if you're on mobile.
+              if you're on mobile (<b>and reopen the frame after you're done</b>
+              ).
             </p>
           </div>
         )}
