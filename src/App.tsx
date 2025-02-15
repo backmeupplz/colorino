@@ -17,8 +17,6 @@ function AppWithContext({ context }: { context?: Context.FrameContext }) {
     context?.user.pfpUrl || ''
   )
 
-  const [filterAvailable, setFilterAvailable] = useState<boolean>(true)
-
   if (!context?.user?.fid) {
     return (
       <div>
@@ -45,10 +43,6 @@ function AppWithContext({ context }: { context?: Context.FrameContext }) {
         canvas.height = img.height
         const ctx = canvas.getContext('2d')
         if (!ctx) throw new Error('Could not get 2D context')
-        if (!('filter' in ctx)) {
-          setFilterAvailable(false)
-          return
-        }
         ctx.filter = colorFilters[color]
         console.log('Setting filter', ctx.filter)
         ctx.drawImage(img, 0, 0, img.width, img.height)
@@ -62,17 +56,35 @@ function AppWithContext({ context }: { context?: Context.FrameContext }) {
         )
       }
     }
-    if (filterAvailable) {
-      void applyFilter()
-    }
-  }, [color, context.user.pfpUrl, filterAvailable])
+    void applyFilter()
+  }, [color, context.user.pfpUrl])
 
-  const downloadFilteredImage = () => {
-    toast.success('Opening new pfp in a new tab...')
-    toast.success(`https://polite-deer-repeat.loca.lt/?data=${renderedSrc}`)
-    return frameSdk.actions.openUrl(
-      `https://polite-deer-repeat.loca.lt/?data=${renderedSrc}`
-    )
+  const [loading, setLoading] = useState<boolean>(false)
+
+  const downloadFilteredImage = async () => {
+    const toastId = toast.loading('Uploading tinted image...')
+    setLoading(true)
+    try {
+      const response = await fetch('https://images.colorino.site/upload', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ data: renderedSrc }),
+      })
+      if (!response.ok) {
+        throw new Error(`Upload failed: ${response.statusText}`)
+      }
+      const json = await response.json()
+      const imageUrl = `https://images.colorino.site/${json.hash}.avif`
+      return frameSdk.actions.openUrl(imageUrl)
+    } catch (error) {
+      console.error('Error uploading image:', error)
+      toast.error(
+        `Error uploading image{ ${error instanceof Error ? error.message : `${error}`}`
+      )
+    } finally {
+      toast.dismiss(toastId)
+      setLoading(false)
+    }
   }
 
   if (!context.user.pfpUrl) {
@@ -88,7 +100,6 @@ function AppWithContext({ context }: { context?: Context.FrameContext }) {
     <div className="container prose mx-auto max-w-prose p-5">
       <h1>Colorino</h1>
       <h3>Color your Farcaster PFP!</h3>
-
       {/* Color filter buttons */}
       <div className="flex flex-wrap gap-2">
         {Object.keys(colorFilters).map((colorOption) => (
@@ -101,40 +112,21 @@ function AppWithContext({ context }: { context?: Context.FrameContext }) {
           </button>
         ))}
       </div>
-
       {/* Render the tinted image (now baked in, so "Save As" will save the filter) */}
-      {filterAvailable ? (
-        <img
-          className="aspect-square w-full object-cover"
-          src={renderedSrc}
-          alt="Filtered PFP"
-        />
-      ) : (
-        <img
-          className="aspect-square w-full object-cover"
-          src={context.user.pfpUrl}
-          style={{ filter: colorFilters[color] }}
-        />
-      )}
-      {/* {filterAvailable ? (
-        <></>
-      ) : (
-        <p>
-          Your browser doesn't support real image filters, so the best you can
-          do is to screenshot and crop, good luck!
-        </p>
-      )} */}
-      <p>
-        For now, there's no way to download an image from a frame, and I
-        couldn't find a way to update PFP automatically, so you have to
-        screenshot, crop and set this as your new PFP. Cheers!
-      </p>
+      <img
+        className="aspect-square w-full object-cover"
+        src={renderedSrc}
+        alt="Filtered PFP"
+      />
+
       <div className="flex flex-col gap-2">
-        {/* {filterAvailable && (
-          <button className="btn" onClick={downloadFilteredImage}>
-            Download Tinted Image
-          </button>
-        )} */}
+        <button
+          className="btn"
+          onClick={downloadFilteredImage}
+          disabled={loading}
+        >
+          Download Tinted Image
+        </button>
         <button className="btn" onClick={() => frameSdk.actions.close()}>
           Close Frame
         </button>
