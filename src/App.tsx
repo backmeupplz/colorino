@@ -218,6 +218,7 @@ function AppWithContext({ context }: { context?: Context.FrameContext }) {
       toast.dismiss(toastId)
       toast.success('Profile picture set successfully!')
     } catch (error) {
+      setSignerAtomValue(null)
       console.error('Error setting profile picture:', error)
       toast.error(
         `Error setting profile picture: ${
