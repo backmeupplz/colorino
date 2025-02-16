@@ -90,7 +90,7 @@ function AppWithContext({ context }: { context?: Context.FrameContext }) {
         if (sticker.visible && containerRef.current) {
           const stickerImg = new Image()
           stickerImg.crossOrigin = 'anonymous'
-          stickerImg.src = 'sticker.png'
+          stickerImg.src = 'punk.png'
           await new Promise<void>((resolve, reject) => {
             stickerImg.onload = () => resolve()
             stickerImg.onerror = (err) => reject(err)
@@ -387,7 +387,7 @@ function AppWithContext({ context }: { context?: Context.FrameContext }) {
             }}
           >
             <img
-              src="sticker.png"
+              src="punk.png"
               alt="sticker"
               style={{
                 width: '100%',
