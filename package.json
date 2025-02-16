@@ -17,6 +17,7 @@
     "preact": "^10.24.3",
     "react-hot-toast": "^2.5.1",
     "react-qr-code": "^2.0.15",
+    "react-rnd": "^10.4.14",
     "viem": "^2.23.2",
     "vite-plugin-node-polyfills": "^0.23.0"
   },

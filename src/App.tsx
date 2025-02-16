@@ -1,7 +1,8 @@
 import { ByteArray, toBytes, toHex } from 'viem'
+import { Rnd } from 'react-rnd'
 import { ed25519 } from '@noble/curves/ed25519'
 import { useAtom } from 'jotai'
-import { useCallback, useEffect, useState } from 'preact/compat'
+import { useCallback, useEffect, useRef, useState } from 'preact/compat'
 import QRCode from 'react-qr-code'
 import frameSdk, { Context } from '@farcaster/frame-sdk'
 import signerAtom from 'signerAtom'
@@ -31,11 +32,25 @@ function AppWithContext({ context }: { context?: Context.FrameContext }) {
     )
   }
 
+  // Sticker state; the numbers represent the position and size relative to the displayed image container.
+  const [sticker, setSticker] = useState({
+    visible: false,
+    x: 20,
+    y: 20,
+    width: 100,
+    height: 100,
+  })
+
+  // We use a ref on the container that holds the displayed image and the sticker overlay.
+  const containerRef = useRef<HTMLDivElement>(null)
+
+  // This effect re-renders the final image whenever the base image URL, color filter, or sticker state changes.
   useEffect(() => {
-    async function applyFilter() {
+    async function renderFinalImage() {
       try {
         console.log('Applying filter...')
         if (!context?.user.pfpUrl) throw new Error('No PFP URL found')
+        // Load the base image.
         const img = new Image()
         img.crossOrigin = 'anonymous'
         img.src = context.user.pfpUrl
@@ -43,26 +58,72 @@ function AppWithContext({ context }: { context?: Context.FrameContext }) {
           img.onload = () => resolve()
           img.onerror = (err) => reject(err)
         })
+
+        // Create a square canvas that matches the crop used by object-fit: cover.
+        let sx = 0,
+          sy = 0,
+          sSize = 0
+        if (img.naturalWidth >= img.naturalHeight) {
+          // Landscape or square: crop horizontally.
+          sSize = img.naturalHeight
+          sx = (img.naturalWidth - sSize) / 2
+          sy = 0
+        } else {
+          // Portrait: crop vertically.
+          sSize = img.naturalWidth
+          sx = 0
+          sy = (img.naturalHeight - sSize) / 2
+        }
+
         const canvas = document.createElement('canvas')
-        canvas.width = img.width
-        canvas.height = img.height
+        canvas.width = sSize
+        canvas.height = sSize
         const ctx = canvas.getContext('2d')
         if (!ctx) throw new Error('Could not get 2D context')
+
+        // Draw the cropped portion of the image onto the canvas.
+        // This mimics object-fit: cover on a square container.
         ctx.filter = colorFilters[color]
-        console.log('Setting filter', ctx.filter)
-        ctx.drawImage(img, 0, 0, img.width, img.height)
+        ctx.drawImage(img, sx, sy, sSize, sSize, 0, 0, sSize, sSize)
+
+        // If a sticker has been added, draw it onto the canvas.
+        if (sticker.visible && containerRef.current) {
+          const stickerImg = new Image()
+          stickerImg.crossOrigin = 'anonymous'
+          stickerImg.src = 'sticker.png'
+          await new Promise<void>((resolve, reject) => {
+            stickerImg.onload = () => resolve()
+            stickerImg.onerror = (err) => reject(err)
+          })
+          // Get the displayed container dimensions.
+          const rect = containerRef.current.getBoundingClientRect()
+          // Compute the scaling factor from displayed container to the canvas.
+          const factor = sSize / rect.width
+          const stickerX = sticker.x * factor
+          const stickerY = sticker.y * factor
+          const stickerWidth = sticker.width * factor
+          const stickerHeight = sticker.height * factor
+          ctx.drawImage(
+            stickerImg,
+            stickerX,
+            stickerY,
+            stickerWidth,
+            stickerHeight
+          )
+        }
+
+        // Set the final data URL.
         const dataUrl = canvas.toDataURL('image/png')
         setRenderedSrc(dataUrl)
-        console.log('Filter applied!')
       } catch (err) {
         console.error(err)
         toast.error(
-          `Error applying color filter: ${err instanceof Error ? err.message : `${err}`}`
+          `Error rendering image: ${err instanceof Error ? err.message : `${err}`}`
         )
       }
     }
-    void applyFilter()
-  }, [color, context.user.pfpUrl])
+    void renderFinalImage()
+  }, [color, context?.user.pfpUrl, sticker])
 
   const [loading, setLoading] = useState<boolean>(false)
 
@@ -84,7 +145,7 @@ function AppWithContext({ context }: { context?: Context.FrameContext }) {
     } catch (error) {
       console.error('Error uploading image:', error)
       toast.error(
-        `Error uploading image{ ${error instanceof Error ? error.message : `${error}`}`
+        `Error uploading image: ${error instanceof Error ? error.message : `${error}`}`
       )
     } finally {
       toast.dismiss(toastId)
@@ -257,14 +318,86 @@ function AppWithContext({ context }: { context?: Context.FrameContext }) {
             {colorOption}
           </button>
         ))}
+        {!sticker.visible ? (
+          <button
+            className="btn btn-sm"
+            onClick={() =>
+              setSticker({
+                visible: true,
+                x: 20,
+                y: 20,
+                width: 100,
+                height: 100,
+              })
+            }
+          >
+            PUNK
+          </button>
+        ) : (
+          <button
+            className="btn btn-sm"
+            onClick={() => setSticker((prev) => ({ ...prev, visible: false }))}
+          >
+            DE-PUNK
+          </button>
+        )}
       </div>
-      {/* Render the tinted image (now baked in, so "Save As" will save the filter) */}
-      <img
-        className="aspect-square w-full object-cover"
-        src={renderedSrc}
-        alt="Filtered PFP"
-      />
-
+      <div
+        ref={containerRef}
+        className="relative inline-block overflow-hidden"
+        style={{ marginTop: '1rem' }}
+      >
+        <img
+          className="aspect-square w-full object-cover"
+          src={renderedSrc}
+          alt="Filtered PFP"
+        />
+        {sticker.visible && (
+          <Rnd
+            size={{ width: sticker.width, height: sticker.height }}
+            position={{ x: sticker.x, y: sticker.y }}
+            style={{ border: '2px dashed #000' }} // This adds a visible dashed border
+            resizeHandleStyles={{
+              top: { background: '#fff', border: '1px solid #000' },
+              right: { background: '#fff', border: '1px solid #000' },
+              bottom: { background: '#fff', border: '1px solid #000' },
+              left: { background: '#fff', border: '1px solid #000' },
+              topLeft: { background: '#fff', border: '1px solid #000' },
+              topRight: { background: '#fff', border: '1px solid #000' },
+              bottomLeft: { background: '#fff', border: '1px solid #000' },
+              bottomRight: { background: '#fff', border: '1px solid #000' },
+            }}
+            onDragStop={(e: any, d: { x: any; y: any }) => {
+              setSticker((prev) => ({ ...prev, x: d.x, y: d.y }))
+            }}
+            onResizeStop={(
+              e: any,
+              direction: any,
+              ref: { offsetWidth: any; offsetHeight: any },
+              delta: any,
+              position: { x: any; y: any }
+            ) => {
+              setSticker({
+                x: position.x,
+                y: position.y,
+                width: ref.offsetWidth,
+                height: ref.offsetHeight,
+                visible: true,
+              })
+            }}
+          >
+            <img
+              src="sticker.png"
+              alt="sticker"
+              style={{
+                width: '100%',
+                height: '100%',
+                pointerEvents: 'none',
+              }}
+            />
+          </Rnd>
+        )}
+      </div>
       <div className="flex flex-col gap-2">
         <button
           className="btn btn-primary"
@@ -293,7 +426,6 @@ function AppWithContext({ context }: { context?: Context.FrameContext }) {
             </p>
           </div>
         )}
-
         <button
           className="btn"
           onClick={downloadFilteredImage}
