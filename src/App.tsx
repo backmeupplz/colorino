@@ -13,6 +13,13 @@ const colorFilters: Record<string, string> = {
   red: 'grayscale(1) sepia(1) saturate(5000%) hue-rotate(0deg)',
   green: 'grayscale(1) sepia(1) saturate(5000%) hue-rotate(100deg)',
   blue: 'grayscale(1) sepia(1) saturate(5000%) hue-rotate(200deg)',
+  orange: 'grayscale(1) sepia(1) saturate(5000%) hue-rotate(30deg)',
+  yellow: 'grayscale(1) sepia(1) saturate(5000%) hue-rotate(60deg)',
+  aqua: 'grayscale(1) sepia(1) saturate(5000%) hue-rotate(160deg)',
+  purple: 'grayscale(1) sepia(1) saturate(5000%) hue-rotate(240deg)',
+  gold: 'grayscale(1) sepia(1) saturate(5000%) hue-rotate(45deg)',
+  silver: 'grayscale(1) sepia(1) saturate(5000%) hue-rotate(180deg)',
+  pink: 'grayscale(1) sepia(1) saturate(5000%) hue-rotate(300deg)',
 }
 
 const castUrl = 'https://warpcast.com/warpcastadmin.eth/0x696df624'
